@@ -30,7 +30,7 @@ pip install pandas
 ### 2. Execute o programa principal
 
 ``` bash
-python seu_arquivo.py
+python laboratorio_quimica.py
 ```
 
 ### 3. Parâmetros disponíveis
