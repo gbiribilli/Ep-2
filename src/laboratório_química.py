@@ -148,7 +148,8 @@ def aptidao(individuo):
 
     makespan = max(intervalo for (_, _, intervalo) in individuo)
 
-    return 10000 - penalidade - makespan * 5
+    fitness = 10000 - penalidade - makespan * 5
+    return fitness, penalidade
 
 def torneio(populacao, k=3):
     return max(random.sample(populacao, k), key=lambda x: x[1])[0]
@@ -172,13 +173,17 @@ def executar_ag(tamanho_populacao, geracoes, taxa_mutacao, taxa_cruzamento):
     melhor_aptidao_geral = -float('inf')
     geracao_melhor_solucao = -1
 
+    historico = []
+
     for geracao in range(geracoes):
-        pontuados = [(ind, aptidao(ind)) for ind in populacao]
+        pontuados = [(ind, aptidao(ind)[0]) for ind in populacao]
         pontuados.sort(key=lambda x: x[1], reverse=True)
 
         melhor_aptidao_atual = pontuados[0][1]
         media_aptidao = statistics.mean(x[1] for x in pontuados)
         pior_aptidao = pontuados[-1][1]
+
+        historico.append(melhor_aptidao_atual)
 
         if melhor_aptidao_atual > melhor_aptidao_geral:
             melhor_aptidao_geral = melhor_aptidao_atual
@@ -201,7 +206,7 @@ def executar_ag(tamanho_populacao, geracoes, taxa_mutacao, taxa_cruzamento):
 
         populacao = nova_populacao
 
-    return melhor_solucao_geral, melhor_aptidao_geral, geracao_melhor_solucao
+    return melhor_solucao_geral, melhor_aptidao_geral, geracao_melhor_solucao, historico
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -210,9 +215,18 @@ if __name__ == "__main__":
     parser.add_argument("--mut", type=float, default=0.1)
     parser.add_argument("--cross", type=float, default=0.8)
 
-    argumentos = parser.parse_args([])
+    argumentos = parser.parse_args()
 
-    melhor_solucao, melhor_aptidao_final, geracao_melhor_solucao = executar_ag(argumentos.pop, argumentos.gen, argumentos.mut, argumentos.cross)
+    print(f"\n>>> Executando: pop={argumentos.pop}, mut={argumentos.mut}")
+
+    melhor_solucao, melhor_aptidao_final, geracao_melhor_solucao, historico = executar_ag(argumentos.pop, argumentos.gen, argumentos.mut, argumentos.cross)
+
+    fitness_final, penalidade_final = aptidao(melhor_solucao)
+
+    print("\n===== RESULTADO FINAL =====")
+    print("Melhor fitness:", fitness_final)
+    print("Geração da melhor solução:", geracao_melhor_solucao)
+    print("Violações:", penalidade_final)
 
     def formatar_intervalo_para_hora(numero_intervalo):
         hora_inicio_dia = 8
@@ -315,7 +329,7 @@ if __name__ == "__main__":
     df_analise.set_index("Análise", inplace=True)
 
     print("\n### Visão por Análise\n")
-    display(df_analise)
+    print(df_analise.to_string())
 
     lista_equipamento = []
 
@@ -345,4 +359,7 @@ if __name__ == "__main__":
     df_equipamento = pd.DataFrame(lista_equipamento)
 
     print("\n### Visão por Equipamento\n")
-    display(df_equipamento)
+    print(df_equipamento.to_string())
+
+    print("\nHistorico:")
+    print(historico)
